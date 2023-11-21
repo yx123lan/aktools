@@ -6,8 +6,10 @@ Desc: HTTP 模式主文件
 """
 import json
 import urllib.parse
+import os
 
 import akshare as ak
+import aktools.adapter.akshare2 as ak2
 from fastapi import APIRouter
 from fastapi import Depends, status
 from fastapi import Request
@@ -39,9 +41,10 @@ def root(
     :rtype: json
     """
     interface_list = dir(ak)
+    interface_list2 = dir(ak2)
     decode_params = urllib.parse.unquote(str(request.query_params))
     # print(decode_params)
-    if item_id not in interface_list:
+    if item_id not in interface_list and item_id not in interface_list2:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
@@ -51,7 +54,10 @@ def root(
     eval_str = decode_params.replace("&", '", ').replace("=", '="') + '"'
     if not bool(request.query_params):
         try:
-            received_df = eval("ak." + item_id + f"()")
+            if item_id.startswith("custom_"):
+                received_df = eval("ak2." + item_id + f"()")
+            else:
+                received_df = eval("ak." + item_id + f"()")
             if received_df is None:
                 return JSONResponse(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -98,9 +104,10 @@ def root(request: Request, item_id: str):
     :rtype: json
     """
     interface_list = dir(ak)
+    interface_list2 = dir(ak2)
     decode_params = urllib.parse.unquote(str(request.query_params))
     # print(decode_params)
-    if item_id not in interface_list:
+    if item_id not in interface_list and item_id not in interface_list2:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
@@ -120,7 +127,10 @@ def root(request: Request, item_id: str):
         eval_str = eval_str.replace("+", " ")  # 处理传递的参数中带空格的情况
     if not bool(request.query_params):
         try:
-            received_df = eval("ak." + item_id + f"()")
+            if item_id.startswith("custom_"):
+                received_df = eval("ak2." + item_id + f"()")
+            else:
+                received_df = eval("ak." + item_id + f"()")
             if received_df is None:
                 return JSONResponse(
                     status_code=status.HTTP_404_NOT_FOUND,
