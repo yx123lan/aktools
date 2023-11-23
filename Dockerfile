@@ -5,11 +5,11 @@ FROM python:3.11-slim-bullseye
 RUN pip install --upgrade pip
 
 COPY  ./ /usr/local/aktools
-WORKDIR /usr/local/aktools/aktools
+WORKDIR /usr/local/aktools
 
 RUN pip install -r requirements.txt
 # 新增 gunicorn 安装，提升并发和并行能力
 RUN pip install --no-cache-dir gunicorn -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com  --upgrade
-
+WORKDIR /usr/local/aktools/aktools
 # 默认启动 gunicorn 服务
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app", "-k", "uvicorn.workers.UvicornWorker"]
