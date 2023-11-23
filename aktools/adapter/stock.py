@@ -91,7 +91,6 @@ def custom_zh_a_stock_spot_em(symbol: str = "600600") -> pd.DataFrame:
 
 
 def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
-    os.environ['NO_PROXY'] = "quotes.sina.cn"
     zyjs_df = stock_zyjs_ths(symbol)
     # 获取当前日期
     current_date = datetime.now()
