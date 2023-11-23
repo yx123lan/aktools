@@ -5,7 +5,7 @@ FROM python:3.11-slim-bullseye
 RUN pip install --upgrade pip
 
 COPY  ./ /usr/local/aktools
-WORKDIR /usr/local/aktools
+WORKDIR /usr/local/aktools/aktools
 
 RUN pip install -r requirements.txt
 # 新增 gunicorn 安装，提升并发和并行能力
