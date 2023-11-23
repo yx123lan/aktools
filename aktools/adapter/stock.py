@@ -80,6 +80,11 @@ from akshare.stock.stock_dividend_cninfo import stock_dividend_cninfo
 
 from akshare.stock_fundamental.stock_zyjs_ths import stock_zyjs_ths
 
+"""
+巨潮资讯-个股-公司概况
+"""
+from akshare.stock.stock_profile_cninfo import stock_profile_cninfo
+
 import os
 import pandas as pd
 from datetime import datetime, timedelta
@@ -91,13 +96,17 @@ def custom_zh_a_stock_spot_em(symbol: str = "600600") -> pd.DataFrame:
 
 
 def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
-    zyjs_df = stock_zyjs_ths(symbol)
+    zyjs_df = stock_profile_cninfo(symbol)
     # 获取当前日期
     current_date = datetime.now()
     # 计算最近一年的起始日期
     one_year_ago = current_date - timedelta(days=365)
     b_df = stock_financial_analysis_indicator(symbol=symbol, start_year=one_year_ago.strftime("%Y"))
-    gdhs_df = stock_zh_a_gdhs_detail_em(symbol=symbol)
+    try:
+        gdhs_df = stock_zh_a_gdhs_detail_em(symbol=symbol)
+    except TypeError as e:
+        print(e)
+        gdhs_df = pd.DataFrame()
     jiejing_df = stock_restricted_release_queue_em(symbol=symbol)
     holder_df = stock_circulate_stock_holder(symbol=symbol)
     six_month_ago = current_date - timedelta(days=180)
@@ -128,7 +137,7 @@ def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
     # 使用head获取前10行数据
     top_10_fund_holder = sorted_fund_holder.head(10)
     news_df = stock_news_em(symbol=symbol).head(15)
-    return pd.DataFrame([{"主营介绍": zyjs_df},  {"最近一年关键财务指标": b_df}, {"股东户数": gdhs_df.iloc[0]},
+    return pd.DataFrame([{"公司概况": zyjs_df},  {"最近一年关键财务指标": b_df}, {"股东户数": gdhs_df.iloc[0]},
                          {"限售解禁情况": jiejing_df}, {"个股指标": indicator_df}, {"历史分红数据": dividend_df},
                          {"最近1年董监高人员股份变动": hold_change_df},
                          {"最近6个月流通股东详情": holder_df[(holder_df['截止日期'] > six_month_ago.date())]},
