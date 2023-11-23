@@ -147,7 +147,10 @@ def root(request: Request, item_id: str):
         return JSONResponse(status_code=status.HTTP_200_OK, content=json.loads(temp_df))
     else:
         try:
-            received_df = eval("ak." + item_id + f"({eval_str})")
+            if item_id.startswith("custom_"):
+                received_df = eval("ak2." + item_id + f"({eval_str})")
+            else:
+                received_df = eval("ak." + item_id + f"({eval_str})")
             if received_df is None:
                 return JSONResponse(
                     status_code=status.HTTP_404_NOT_FOUND,
