@@ -96,6 +96,7 @@ def custom_zh_a_stock_spot_em(symbol: str = "600600") -> pd.DataFrame:
 
 
 def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
+    os.environ['NO_PROXY'] = "quotes.sina.cn"
     zyjs_df = stock_profile_cninfo(symbol=symbol)
     # 获取当前日期
     current_date = datetime.now()
@@ -129,12 +130,15 @@ def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
     # 使用head获取前10行数据
     top_10_fund_holder = sorted_fund_holder.head(10)
     news_df = stock_news_em(symbol=symbol).head(15)
-    return pd.DataFrame([{"公司概况": zyjs_df},  {"最近一年关键财务指标": b_df},
-                         {"限售解禁情况": jiejing_df}, {"个股指标": indicator_df}, {"历史分红数据": dividend_df},
-                         {"最近1年董监高人员股份变动": hold_change_df},
-                         {"最近6个月流通股东详情": holder_df[(holder_df['截止日期'] > six_month_ago.date())]},
-                         {"最近3个月持有当前股票的前十大基金": top_10_fund_holder},
-                         {"最近关于此公司的新闻": news_df}])
+    records_json = {"公司概况": zyjs_df,  "最近一年关键财务指标": b_df,
+                    "限售解禁情况": jiejing_df, "个股指标": indicator_df, "历史分红数据": dividend_df,
+                    "最近1年董监高人员股份变动": hold_change_df,
+                    "最近6个月流通股东详情": holder_df[(holder_df['截止日期'] > six_month_ago.date())],
+                    "最近3个月持有当前股票的前十大基金": top_10_fund_holder,
+                    "最近关于此公司的新闻": news_df}
+    result_df = pd.Series(records_json).to_frame().T
+    result_df.columns = records_json.keys()
+    return result_df
 
 
 def stock_share_hold_change(symbol) -> pd.DataFrame:
@@ -209,7 +213,7 @@ if __name__ == "__main__":
     df = custom_stock_overview(
         symbol="600489"
     )
-    print(df.to_json())
+    print(df.to_json(orient="table", date_format="iso"))
     # stock_financial_report_sina_df = custom_stock_financial_report_sina(
     #     stock="sh600600", symbol="现金流量表"
     # )
