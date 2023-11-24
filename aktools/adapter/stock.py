@@ -85,6 +85,7 @@ from akshare.stock_fundamental.stock_zyjs_ths import stock_zyjs_ths
 """
 from akshare.stock.stock_profile_cninfo import stock_profile_cninfo
 
+import asyncio
 import os
 import pandas as pd
 from datetime import datetime, timedelta
@@ -95,25 +96,71 @@ def custom_zh_a_stock_spot_em(symbol: str = "600600") -> pd.DataFrame:
     return df[df['代码'] == symbol]
 
 
-def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
-    os.environ['NO_PROXY'] = "quotes.sina.cn"
-    zyjs_df = stock_profile_cninfo(symbol=symbol)
+# 假设这些函数已经被转换为异步函数
+async def stock_profile_cninfo_async(symbol: str):
+    return await asyncio.to_thread(stock_profile_cninfo, symbol=symbol)
+
+
+async def stock_financial_analysis_indicator_async(symbol: str, start_year: str):
+    return await asyncio.to_thread(stock_financial_analysis_indicator, symbol=symbol, start_year=start_year)
+
+
+async def stock_restricted_release_queue_em_async(symbol: str):
+    return await asyncio.to_thread(stock_restricted_release_queue_em, symbol=symbol)
+
+
+async def stock_circulate_stock_holder_async(symbol: str):
+    return await asyncio.to_thread(stock_circulate_stock_holder, symbol=symbol)
+
+
+async def stock_share_hold_change_async(symbol: str):
+    return await asyncio.to_thread(stock_share_hold_change, symbol=symbol)
+
+
+async def stock_dividend_cninfo_async(symbol: str):
+    return await asyncio.to_thread(stock_dividend_cninfo, symbol=symbol)
+
+
+async def stock_fund_stock_holder_async(symbol: str):
+    return await asyncio.to_thread(stock_fund_stock_holder, symbol=symbol)
+
+
+async def stock_news_em_async(symbol: str):
+    return await asyncio.to_thread(stock_news_em, symbol=symbol)
+
+
+async def stock_info(symbol: str):
     # 获取当前日期
     current_date = datetime.now()
     # 计算最近一年的起始日期
     one_year_ago = current_date - timedelta(days=365)
-    b_df = stock_financial_analysis_indicator(symbol=symbol, start_year=one_year_ago.strftime("%Y"))
-    try:
-        jiejing_df = stock_restricted_release_queue_em(symbol=symbol)
-    except Exception as e:
-        print(e)
-        jiejing_df = pd.DataFrame()
-    try:
-        holder_df = stock_circulate_stock_holder(symbol=symbol)
-    except Exception as e:
-        print(e)
-        holder_df = pd.DataFrame()
+
+    tasks = [
+        stock_profile_cninfo_async(symbol),
+        stock_financial_analysis_indicator_async(symbol, one_year_ago.strftime("%Y")),
+        stock_restricted_release_queue_em_async(symbol),
+        stock_circulate_stock_holder_async(symbol),
+        stock_share_hold_change_async(symbol),
+        stock_dividend_cninfo_async(symbol),
+        stock_fund_stock_holder_async(symbol),
+        stock_news_em_async(symbol)
+    ]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    return results
+
+
+def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
+    # 获取当前日期
+    current_date = datetime.now()
+
+    results = asyncio.run(stock_info(symbol))
+
+    zyjs_df, b_df, jiejing_df, holder_df, hold_change_df, dividend_df, fund_holder_df, news_df = results
+    jiejing_df = jiejing_df if not isinstance(jiejing_df, Exception) else pd.DataFrame()
+    holder_df = holder_df if not isinstance(holder_df, Exception) else pd.DataFrame()
+
     six_month_ago = current_date - timedelta(days=180)
+    six_year_ago = current_date - timedelta(days=365 * 6)
     three_month_ago = current_date - timedelta(days=90)
     if is_a_stock(symbol):
         indicator_temp_df = stock_a_indicator_lg(symbol=symbol)
@@ -121,21 +168,20 @@ def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
     else:
         indicator_temp_df = stock_hk_indicator_eniu(symbol="hk" + symbol)
         indicator_df = indicator_temp_df[(indicator_temp_df['date'] > three_month_ago.date())]
-    hold_change_df = stock_share_hold_change(symbol=symbol)
-    dividend_df = stock_dividend_cninfo(symbol=symbol)
-    fund_holder_df = stock_fund_stock_holder(symbol=symbol)
     one_year_fund_holder_df = fund_holder_df[(fund_holder_df['截止日期'] > three_month_ago.date())]
     # 排序
     sorted_fund_holder = one_year_fund_holder_df.sort_values(by='持仓数量', ascending=False)
     # 使用head获取前10行数据
-    top_10_fund_holder = sorted_fund_holder.head(10)
-    news_df = stock_news_em(symbol=symbol).head(15)
-    records_json = {"公司概况": zyjs_df,  "最近一年关键财务指标": b_df,
-                    "限售解禁情况": jiejing_df, "个股指标": indicator_df, "历史分红数据": dividend_df,
+    records_json = {"公司概况": zyjs_df,
+                    "最近一年关键财务指标": b_df,
+                    "限售解禁情况": jiejing_df,
+                    "个股指标": indicator_df,
+                    "历史分红数据": dividend_df[(dividend_df['实施方案公告日期'] > six_year_ago.date())],
                     "最近1年董监高人员股份变动": hold_change_df,
                     "最近6个月流通股东详情": holder_df[(holder_df['截止日期'] > six_month_ago.date())],
-                    "最近3个月持有当前股票的前十大基金": top_10_fund_holder,
-                    "最近关于此公司的新闻": news_df}
+                    "最近3个月持有当前股票的前十大基金": sorted_fund_holder.head(10),
+                    "最近关于此公司的新闻": news_df.head(15)
+                    }
     result_df = pd.Series(records_json).to_frame().T
     result_df.columns = records_json.keys()
     return result_df
