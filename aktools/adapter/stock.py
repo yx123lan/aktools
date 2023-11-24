@@ -96,7 +96,7 @@ def custom_zh_a_stock_spot_em(symbol: str = "600600") -> pd.DataFrame:
 
 
 def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
-    zyjs_df = stock_profile_cninfo(symbol)
+    zyjs_df = stock_profile_cninfo(symbol=symbol)
     # 获取当前日期
     current_date = datetime.now()
     # 计算最近一年的起始日期
