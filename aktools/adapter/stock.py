@@ -103,12 +103,15 @@ def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
     one_year_ago = current_date - timedelta(days=365)
     b_df = stock_financial_analysis_indicator(symbol=symbol, start_year=one_year_ago.strftime("%Y"))
     try:
-        gdhs_df = stock_zh_a_gdhs_detail_em(symbol=symbol).iloc[0]
-    except TypeError as e:
+        jiejing_df = stock_restricted_release_queue_em(symbol=symbol)
+    except Exception as e:
         print(e)
-        gdhs_df = pd.DataFrame()
-    jiejing_df = stock_restricted_release_queue_em(symbol=symbol)
-    holder_df = stock_circulate_stock_holder(symbol=symbol)
+        jiejing_df = pd.DataFrame()
+    try:
+        holder_df = stock_circulate_stock_holder(symbol=symbol)
+    except Exception as e:
+        print(e)
+        holder_df = pd.DataFrame()
     six_month_ago = current_date - timedelta(days=180)
     three_month_ago = current_date - timedelta(days=90)
     if is_a_stock(symbol):
@@ -117,18 +120,7 @@ def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
     else:
         indicator_temp_df = stock_hk_indicator_eniu(symbol="hk" + symbol)
         indicator_df = indicator_temp_df[(indicator_temp_df['date'] > three_month_ago.date())]
-    if is_a_stock(symbol):
-        exchange = identify_stock_exchange(symbol)
-        if exchange == 'Shanghai':
-            hold_change_df = hold_change_df_limit(stock_share_hold_change_sse(symbol=symbol))
-        elif exchange == 'Shenzhen':
-            hold_change_df = hold_change_df_limit(stock_share_hold_change_szse(symbol=symbol))
-        elif exchange == 'Beijing':
-            hold_change_df = hold_change_df_limit(stock_share_hold_change_bse(symbol=symbol))
-        else:
-            hold_change_df = pd.DataFrame()
-    else:
-        hold_change_df = pd.DataFrame()
+    hold_change_df = stock_share_hold_change(symbol=symbol)
     dividend_df = stock_dividend_cninfo(symbol=symbol)
     fund_holder_df = stock_fund_stock_holder(symbol=symbol)
     one_year_fund_holder_df = fund_holder_df[(fund_holder_df['截止日期'] > three_month_ago.date())]
@@ -137,12 +129,32 @@ def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
     # 使用head获取前10行数据
     top_10_fund_holder = sorted_fund_holder.head(10)
     news_df = stock_news_em(symbol=symbol).head(15)
-    return pd.DataFrame([{"公司概况": zyjs_df},  {"最近一年关键财务指标": b_df}, {"股东户数": gdhs_df},
+    return pd.DataFrame([{"公司概况": zyjs_df},  {"最近一年关键财务指标": b_df},
                          {"限售解禁情况": jiejing_df}, {"个股指标": indicator_df}, {"历史分红数据": dividend_df},
                          {"最近1年董监高人员股份变动": hold_change_df},
                          {"最近6个月流通股东详情": holder_df[(holder_df['截止日期'] > six_month_ago.date())]},
                          {"最近3个月持有当前股票的前十大基金": top_10_fund_holder},
                          {"最近关于此公司的新闻": news_df}])
+
+
+def stock_share_hold_change(symbol) -> pd.DataFrame:
+    try:
+        if is_a_stock(symbol):
+            exchange = identify_stock_exchange(symbol)
+            if exchange == 'Shanghai':
+                hold_change_df = hold_change_df_limit(stock_share_hold_change_sse(symbol=symbol))
+            elif exchange == 'Shenzhen':
+                hold_change_df = hold_change_df_limit(stock_share_hold_change_szse(symbol=symbol))
+            elif exchange == 'Beijing':
+                hold_change_df = hold_change_df_limit(stock_share_hold_change_bse(symbol=symbol))
+            else:
+                hold_change_df = pd.DataFrame()
+        else:
+            hold_change_df = pd.DataFrame()
+    except Exception as e:
+        print(e)
+        hold_change_df = pd.DataFrame()
+    return hold_change_df
 
 
 def hold_change_df_limit(indicator_temp_df):
@@ -194,10 +206,10 @@ if __name__ == "__main__":
     # two_year_ago = current_date - timedelta(days=1230)
     # change_df = indicator_temp_df[(indicator_temp_df['变动日期'] > two_year_ago.date())]
     # print(change_df.to_json())
-    # df = custom_stock_overview(
-    #     symbol="600489"
-    # )
-    # print(df.to_json())
+    df = custom_stock_overview(
+        symbol="600489"
+    )
+    print(df.to_json())
     # stock_financial_report_sina_df = custom_stock_financial_report_sina(
     #     stock="sh600600", symbol="现金流量表"
     # )
