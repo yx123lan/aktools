@@ -87,8 +87,9 @@ from akshare.stock.stock_profile_cninfo import stock_profile_cninfo
 
 import asyncio
 import os
+import math
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 
 def custom_zh_a_stock_spot_em(symbol: str = "600600") -> pd.DataFrame:
@@ -137,7 +138,6 @@ async def stock_info(symbol: str):
 
     tasks = [
         stock_profile_cninfo_async(symbol),
-        stock_financial_analysis_indicator_async(symbol, one_year_ago.strftime("%Y")),
         stock_restricted_release_queue_em_async(symbol),
         stock_circulate_stock_holder_async(symbol),
         stock_share_hold_change_async(symbol),
@@ -149,42 +149,62 @@ async def stock_info(symbol: str):
     return results
 
 
+def handle_exception(value):
+    return value if not isinstance(value, Exception) else pd.DataFrame()
+
+
 def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
     # 获取当前日期
     current_date = datetime.now()
 
     results = asyncio.run(stock_info(symbol))
 
-    zyjs_df, b_df, jiejing_df, holder_df, hold_change_df, dividend_df, fund_holder_df, news_df = results
-    jiejing_df = jiejing_df if not isinstance(jiejing_df, Exception) else pd.DataFrame()
-    holder_df = holder_df if not isinstance(holder_df, Exception) else pd.DataFrame()
+    zyjs_df, jiejing_df, holder_df, hold_change_df, dividend_df, fund_holder_df, news_df = [handle_exception(item) for item in results]
 
     six_month_ago = current_date - timedelta(days=180)
     six_year_ago = current_date - timedelta(days=365 * 6)
     three_month_ago = current_date - timedelta(days=90)
     if is_a_stock(symbol):
         indicator_temp_df = stock_a_indicator_lg(symbol=symbol)
-        indicator_df = indicator_temp_df.sort_values(by='trade_date', ascending=False).head(1)
+        indicator_df = indicator_temp_df.sort_values(by='trade_date', ascending=False).head(5)
     else:
         indicator_temp_df = stock_hk_indicator_eniu(symbol="hk" + symbol)
-        indicator_df = indicator_temp_df.sort_values(by='date', ascending=False).head(1)
+        indicator_df = indicator_temp_df.sort_values(by='date', ascending=False).head(5)
     one_year_fund_holder_df = fund_holder_df[(fund_holder_df['截止日期'] > three_month_ago.date())]
     # 排序
     sorted_fund_holder = one_year_fund_holder_df.sort_values(by='持仓数量', ascending=False)
     # 使用head获取前10行数据
     records_json = {"公司概况": zyjs_df.head(1),
-                    "最近一年关键财务指标": b_df,
                     "限售解禁情况": jiejing_df,
                     "历史分红数据": dividend_df[(dividend_df['实施方案公告日期'] > six_year_ago.date())],
                     "最近1年董监高人员股份变动": hold_change_df,
                     "最近6个月流通股东详情": holder_df[(holder_df['截止日期'] > six_month_ago.date())],
                     "最近3个月持有当前股票的前十大基金": sorted_fund_holder.head(10),
                     "最近关于此公司的新闻": news_df.head(10),
-                    "股价概况": indicator_df
-                    }
+                    "股价概况": indicator_df}
     result_df = pd.Series(records_json).to_frame().T
     result_df.columns = records_json.keys()
     return result_df
+
+
+def serialize_data(obj):
+    if isinstance(obj, (date, datetime)):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {k: serialize_data(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [serialize_data(item) for item in obj]
+    elif isinstance(obj, float):
+        if obj == float('inf'):
+            return "Infinity"
+        elif obj == float('-inf'):
+            return "-Infinity"
+        elif math.isnan(obj):
+            return "NaN"
+        else:
+            return obj
+    else:
+        return obj
 
 
 def stock_share_hold_change(symbol) -> pd.DataFrame:
