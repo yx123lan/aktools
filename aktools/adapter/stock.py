@@ -175,10 +175,6 @@ def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
     sorted_fund_holder = one_year_fund_holder_df.sort_values(by='持仓数量', ascending=False)
     # 使用head获取前10行数据
     records_json = {"公司概况": zyjs_df.head(1),
-                    "限售解禁情况": jiejing_df,
-                    "历史分红数据": dividend_df[(dividend_df['实施方案公告日期'] > six_year_ago.date())],
-                    "最近1年董监高人员股份变动": hold_change_df,
-                    "最近6个月流通股东详情": holder_df[(holder_df['截止日期'] > six_month_ago.date())],
                     "最近3个月持有当前股票的前十大基金": sorted_fund_holder.head(10),
                     "最近关于此公司的新闻": news_df.head(10),
                     "股价概况": indicator_df}
