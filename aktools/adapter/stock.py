@@ -138,6 +138,7 @@ async def stock_info(symbol: str):
 
     tasks = [
         stock_profile_cninfo_async(symbol),
+        stock_financial_analysis_indicator_async(symbol, one_year_ago.strftime("%Y")),
         stock_restricted_release_queue_em_async(symbol),
         stock_circulate_stock_holder_async(symbol),
         stock_share_hold_change_async(symbol),
@@ -159,22 +160,26 @@ def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
 
     results = asyncio.run(stock_info(symbol))
 
-    zyjs_df, jiejing_df, holder_df, hold_change_df, dividend_df, fund_holder_df, news_df = [handle_exception(item) for item in results]
+    zyjs_df, b_df, jiejing_df, holder_df, hold_change_df, dividend_df, fund_holder_df, news_df = [handle_exception(item) for item in results]
 
     six_month_ago = current_date - timedelta(days=180)
-    six_year_ago = current_date - timedelta(days=365 * 6)
+    three_year_ago = current_date - timedelta(days=365 * 5)
     three_month_ago = current_date - timedelta(days=90)
     if is_a_stock(symbol):
         indicator_temp_df = stock_a_indicator_lg(symbol=symbol)
-        indicator_df = indicator_temp_df.sort_values(by='trade_date', ascending=False).head(5)
+        indicator_df = indicator_temp_df.sort_values(by='trade_date', ascending=False).head(1)
     else:
         indicator_temp_df = stock_hk_indicator_eniu(symbol="hk" + symbol)
-        indicator_df = indicator_temp_df.sort_values(by='date', ascending=False).head(5)
+        indicator_df = indicator_temp_df.sort_values(by='date', ascending=False).head(1)
     one_year_fund_holder_df = fund_holder_df[(fund_holder_df['截止日期'] > three_month_ago.date())]
     # 排序
     sorted_fund_holder = one_year_fund_holder_df.sort_values(by='持仓数量', ascending=False)
     # 使用head获取前10行数据
     records_json = {"公司概况": zyjs_df.head(1),
+                    "限售解禁情况": jiejing_df,
+                    "历史分红数据": dividend_df[(dividend_df['实施方案公告日期'] > three_year_ago.date())],
+                    "最近1年董监高人员股份变动": hold_change_df,
+                    "流通股东详情": holder_df[(holder_df['截止日期'] > three_month_ago.date())],
                     "最近3个月持有当前股票的前十大基金": sorted_fund_holder.head(10),
                     "最近关于此公司的新闻": news_df.head(10),
                     "股价概况": indicator_df}
@@ -182,87 +187,6 @@ def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
     result_df.columns = records_json.keys()
     return result_df
 
-def custom_stock_overview2(symbol: str = "600600") -> pd.DataFrame:
-    # 获取当前日期
-    current_date = datetime.now()
-
-    results = asyncio.run(stock_info(symbol))
-
-    zyjs_df, jiejing_df, holder_df, hold_change_df, dividend_df, fund_holder_df, news_df = [handle_exception(item) for item in results]
-
-    six_month_ago = current_date - timedelta(days=180)
-    six_year_ago = current_date - timedelta(days=365 * 6)
-    three_month_ago = current_date - timedelta(days=90)
-    if is_a_stock(symbol):
-        indicator_temp_df = stock_a_indicator_lg(symbol=symbol)
-        indicator_df = indicator_temp_df.sort_values(by='trade_date', ascending=False).head(5)
-    else:
-        indicator_temp_df = stock_hk_indicator_eniu(symbol="hk" + symbol)
-        indicator_df = indicator_temp_df.sort_values(by='date', ascending=False).head(5)
-    one_year_fund_holder_df = fund_holder_df[(fund_holder_df['截止日期'] > three_month_ago.date())]
-    # 排序
-    sorted_fund_holder = one_year_fund_holder_df.sort_values(by='持仓数量', ascending=False)
-    # 使用head获取前10行数据
-    records_json = {"公司概况": zyjs_df.head(1),
-                    "最近3个月持有当前股票的前十大基金": sorted_fund_holder.head(10),
-                    "最近关于此公司的新闻": news_df.head(10)}
-    result_df = pd.Series(records_json).to_frame().T
-    result_df.columns = records_json.keys()
-    return result_df
-
-
-def custom_stock_overview3(symbol: str = "600600") -> pd.DataFrame:
-    # 获取当前日期
-    current_date = datetime.now()
-
-    results = asyncio.run(stock_info(symbol))
-
-    zyjs_df, jiejing_df, holder_df, hold_change_df, dividend_df, fund_holder_df, news_df = [handle_exception(item) for item in results]
-
-    six_month_ago = current_date - timedelta(days=180)
-    six_year_ago = current_date - timedelta(days=365 * 6)
-    three_month_ago = current_date - timedelta(days=90)
-    if is_a_stock(symbol):
-        indicator_temp_df = stock_a_indicator_lg(symbol=symbol)
-        indicator_df = indicator_temp_df.sort_values(by='trade_date', ascending=False).head(5)
-    else:
-        indicator_temp_df = stock_hk_indicator_eniu(symbol="hk" + symbol)
-        indicator_df = indicator_temp_df.sort_values(by='date', ascending=False).head(5)
-    one_year_fund_holder_df = fund_holder_df[(fund_holder_df['截止日期'] > three_month_ago.date())]
-    # 排序
-    sorted_fund_holder = one_year_fund_holder_df.sort_values(by='持仓数量', ascending=False)
-    # 使用head获取前10行数据
-    records_json = {"公司概况": zyjs_df.head(1),
-                    "最近3个月持有当前股票的前十大基金": sorted_fund_holder.head(10)}
-    result_df = pd.Series(records_json).to_frame().T
-    result_df.columns = records_json.keys()
-    return result_df
-
-def custom_stock_overview4(symbol: str = "600600") -> pd.DataFrame:
-    # 获取当前日期
-    current_date = datetime.now()
-
-    results = asyncio.run(stock_info(symbol))
-
-    zyjs_df, jiejing_df, holder_df, hold_change_df, dividend_df, fund_holder_df, news_df = [handle_exception(item) for item in results]
-
-    six_month_ago = current_date - timedelta(days=180)
-    six_year_ago = current_date - timedelta(days=365 * 6)
-    three_month_ago = current_date - timedelta(days=90)
-    if is_a_stock(symbol):
-        indicator_temp_df = stock_a_indicator_lg(symbol=symbol)
-        indicator_df = indicator_temp_df.sort_values(by='trade_date', ascending=False).head(5)
-    else:
-        indicator_temp_df = stock_hk_indicator_eniu(symbol="hk" + symbol)
-        indicator_df = indicator_temp_df.sort_values(by='date', ascending=False).head(5)
-    one_year_fund_holder_df = fund_holder_df[(fund_holder_df['截止日期'] > three_month_ago.date())]
-    # 排序
-    sorted_fund_holder = one_year_fund_holder_df.sort_values(by='持仓数量', ascending=False)
-    # 使用head获取前10行数据
-    records_json = {"公司概况": zyjs_df.head(1)}
-    result_df = pd.Series(records_json).to_frame().T
-    result_df.columns = records_json.keys()
-    return result_df
 
 def serialize_data(obj):
     if isinstance(obj, (date, datetime)):
