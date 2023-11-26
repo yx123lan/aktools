@@ -173,12 +173,18 @@ def custom_stock_overview(symbol: str = "600600") -> pd.DataFrame:
     one_year_fund_holder_df = fund_holder_df[(fund_holder_df['截止日期'] > three_month_ago.date())]
     # 排序
     sorted_fund_holder = one_year_fund_holder_df.sort_values(by='持仓数量', ascending=False)
+    if not jiejing_df.empty:
+        jiejing_df = jiejing_df[(jiejing_df['解禁时间'] > three_month_ago.date())]
+    if not dividend_df.empty:
+        dividend_df = dividend_df[(dividend_df['实施方案公告日期'] > three_year_ago.date())]
+    if not holder_df.empty:
+        holder_df = holder_df[(holder_df['截止日期'] > three_month_ago.date())].head(5)
     # 使用head获取前10行数据
     records_json = {"公司概况": zyjs_df.head(1),
-                    "限售解禁情况": jiejing_df[(jiejing_df['解禁时间'] > three_month_ago.date())],
-                    "历史分红数据": dividend_df[(dividend_df['实施方案公告日期'] > three_year_ago.date())],
+                    "限售解禁情况": jiejing_df,
+                    "历史分红数据": dividend_df,
                     "最近1年董监高人员股份变动": hold_change_df,
-                    "前五大流通股股东": holder_df[(holder_df['截止日期'] > three_month_ago.date())].head(5),
+                    "前五大流通股股东": holder_df,
                     "前五大持有当前股票的基金": sorted_fund_holder.head(5),
                     "最近关于此公司的新闻": news_df.head(5),
                     "股价概况": indicator_df,
