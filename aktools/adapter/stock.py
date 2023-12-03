@@ -12,6 +12,145 @@ from akshare.stock_fundamental.stock_finance import (
     stock_main_stock_holder,
 )
 
+"""
+全球宏观-美国宏观
+"""
+from akshare.economic.macro_usa import (
+    macro_usa_eia_crude_rate,
+    macro_usa_non_farm,
+    macro_usa_unemployment_rate,
+    macro_usa_adp_employment,
+    macro_usa_core_pce_price,
+    macro_usa_cpi_monthly,
+    macro_usa_cpi_yoy,
+    macro_usa_crude_inner,
+    macro_usa_gdp_monthly,
+    macro_usa_initial_jobless,
+    macro_usa_lmci,
+    macro_usa_api_crude_stock,
+    macro_usa_building_permits,
+    macro_usa_business_inventories,
+    macro_usa_cb_consumer_confidence,
+    macro_usa_core_cpi_monthly,
+    macro_usa_core_ppi,
+    macro_usa_current_account,
+    macro_usa_durable_goods_orders,
+    macro_usa_trade_balance,
+    macro_usa_spcs20,
+    macro_usa_services_pmi,
+    macro_usa_rig_count,
+    macro_usa_retail_sales,
+    macro_usa_real_consumer_spending,
+    macro_usa_ppi,
+    macro_usa_pmi,
+    macro_usa_personal_spending,
+    macro_usa_pending_home_sales,
+    macro_usa_nfib_small_business,
+    macro_usa_new_home_sales,
+    macro_usa_nahb_house_market_index,
+    macro_usa_michigan_consumer_sentiment,
+    macro_usa_exist_home_sales,
+    macro_usa_export_price,
+    macro_usa_factory_orders,
+    macro_usa_house_price_index,
+    macro_usa_house_starts,
+    macro_usa_import_price,
+    macro_usa_industrial_production,
+    macro_usa_ism_non_pmi,
+    macro_usa_ism_pmi,
+    macro_usa_job_cuts,
+    macro_usa_cftc_nc_holding,
+    macro_usa_cftc_c_holding,
+    macro_usa_cftc_merchant_currency_holding,
+    macro_usa_cftc_merchant_goods_holding,
+    macro_usa_phs,
+)
+
+"""
+全球宏观-中国宏观
+"""
+from akshare.economic.macro_china import (
+    macro_china_bank_financing,
+    macro_china_insurance_income,
+    macro_china_mobile_number,
+    macro_china_vegetable_basket,
+    macro_china_agricultural_product,
+    macro_china_agricultural_index,
+    macro_china_energy_index,
+    macro_china_commodity_price_index,
+    macro_global_sox_index,
+    macro_china_yw_electronic_index,
+    macro_china_construction_index,
+    macro_china_construction_price_index,
+    macro_china_lpi_index,
+    macro_china_bdti_index,
+    macro_china_bsi_index,
+    macro_china_cpi_monthly,
+    macro_china_cpi_yearly,
+    macro_china_m2_yearly,
+    macro_china_fx_reserves_yearly,
+    macro_china_cx_pmi_yearly,
+    macro_china_pmi_yearly,
+    macro_china_daily_energy,
+    macro_china_non_man_pmi,
+    macro_china_rmb,
+    macro_china_gdp_yearly,
+    macro_china_shrzgm,
+    macro_china_ppi_yearly,
+    macro_china_cx_services_pmi_yearly,
+    macro_china_market_margin_sh,
+    macro_china_market_margin_sz,
+    macro_china_au_report,
+    macro_china_exports_yoy,
+    macro_china_hk_market_info,
+    macro_china_imports_yoy,
+    macro_china_trade_balance,
+    macro_china_shibor_all,
+    macro_china_industrial_production_yoy,
+    macro_china_gyzjz,
+    macro_china_lpr,
+    macro_china_new_house_price,
+    macro_china_enterprise_boom_index,
+    macro_china_national_tax_receipts,
+    macro_china_new_financial_credit,
+    macro_china_fx_gold,
+    macro_china_money_supply,
+    macro_china_stock_market_cap,
+    macro_china_cpi,
+    macro_china_gdp,
+    macro_china_ppi,
+    macro_china_pmi,
+    macro_china_gdzctz,
+    macro_china_hgjck,
+    macro_china_czsr,
+    macro_china_whxd,
+    macro_china_wbck,
+    macro_china_bond_public,
+    macro_china_xfzxx,
+    macro_china_reserve_requirement_ratio,
+    macro_china_consumer_goods_retail,
+    macro_china_society_electricity,
+    macro_china_society_traffic_volume,
+    macro_china_postal_telecommunicational,
+    macro_china_international_tourism_fx,
+    macro_china_passenger_load_factor,
+    macro_china_freight_index,
+    macro_china_central_bank_balance,
+    macro_china_insurance,
+    macro_china_supply_of_money,
+    macro_china_swap_rate,
+    macro_china_foreign_exchange_gold,
+    macro_china_retail_price_index,
+    macro_china_real_estate,
+    macro_china_qyspjg,
+    macro_china_fdi,
+    macro_shipping_bci,
+    macro_shipping_bcti,
+    macro_shipping_bdi,
+    macro_shipping_bpi,
+    macro_china_urban_unemployment,
+)
+
 from akshare.stock_fundamental.stock_finance_ths import (
     stock_financial_abstract_ths,
     stock_financial_debt_ths,
@@ -90,6 +229,7 @@ import os
 import math
 import pandas as pd
 from datetime import datetime, timedelta, date
+from dateutil.relativedelta import relativedelta
 
 
 def custom_zh_a_stock_spot_em(symbol: str = "600600") -> pd.DataFrame:
@@ -227,6 +367,66 @@ def custom_stock_overview_simple(symbol: str = "600600") -> pd.DataFrame:
     result_df.columns = records_json.keys()
     return result_df
 
+
+def custom_macro_china_cpi_monthly() -> pd.DataFrame:
+    temp_df = macro_china_cpi_monthly()
+    temp_df.index = temp_df.index - pd.DateOffset(months=1)
+    # 创建一个日期范围
+    new_df = pd.DataFrame({'月份': temp_df.index.strftime("%Y-%m"), '环比增长(百分比)': temp_df.values})
+    return new_df
+
+
+def custom_macro_china_imports_yoy() -> pd.DataFrame:
+    temp_df = macro_china_imports_yoy()
+    # 创建一个日期范围
+    temp_df.index = temp_df.index - pd.DateOffset(months=1)
+
+    # 创建一个新的 DataFrame，将数据和日期合并
+    new_df = pd.DataFrame({'月份': temp_df.index.strftime('%Y-%m'), '同比增长(百分比)': temp_df.values})
+    return new_df
+
+
+def custom_macro_china_exports_yoy() -> pd.DataFrame:
+    temp_df = macro_china_exports_yoy()
+    temp_df.index = temp_df.index - pd.DateOffset(months=1)
+
+    # 创建一个新的 DataFrame，将数据和日期合并
+    new_df = pd.DataFrame({'月份': temp_df.index.strftime('%Y-%m'), '同比增长(百分比)': temp_df.values})
+    return new_df
+
+
+def custom_macro_china_industrial_production_yoy() -> pd.DataFrame:
+    temp_df = macro_china_industrial_production_yoy()
+    temp_df.index = temp_df.index - pd.DateOffset(months=1)
+    # 创建一个新的 DataFrame，将数据和日期合并
+    new_df = pd.DataFrame({'月份': temp_df.index.strftime('%Y-%m'), '同比增长(百分比)': temp_df.values})
+    return new_df
+
+
+def custom_macro_china_fx_reserves_yearly() -> pd.DataFrame:
+    temp_df = macro_china_fx_reserves_yearly()
+    temp_df.index = temp_df.index - pd.DateOffset(months=1)
+    # 创建一个新的 DataFrame，将数据和日期合并
+    new_df = pd.DataFrame({'月份': temp_df.index.strftime('%Y-%m'), '同比增长(亿美元)': temp_df.values})
+    return new_df
+
+
+def custom_macro_china_m2_yearly() -> pd.DataFrame:
+    temp_df = macro_china_m2_yearly()
+    temp_df.index = temp_df.index - pd.DateOffset(months=1)
+    # 创建一个新的 DataFrame，将数据和日期合并
+    new_df = pd.DataFrame({'月份': temp_df.index.strftime('%Y-%m'), '同比增长(百分比)': temp_df.values})
+    return new_df
+
+
+def custom_macro_usa_cpi_monthly() -> pd.DataFrame:
+    temp_df = macro_usa_cpi_monthly()
+    temp_df.index = temp_df.index - pd.DateOffset(months=1)
+    # 创建一个新的 DataFrame，将数据和日期合并
+    new_df = pd.DataFrame({'date': temp_df.index.strftime('%Y-%m'), 'value': temp_df.values})
+    return new_df
+
+
 def serialize_data(obj):
     if isinstance(obj, (date, datetime)):
         return obj.isoformat()
@@ -316,9 +516,10 @@ if __name__ == "__main__":
     # two_year_ago = current_date - timedelta(days=1230)
     # change_df = indicator_temp_df[(indicator_temp_df['变动日期'] > two_year_ago.date())]
     # print(change_df.to_json())
-    df = custom_stock_overview(
-        symbol="600489"
-    )
+    # df = custom_stock_overview(
+    #     symbol="600489"
+    # )
+    df = custom_macro_china_cpi_monthly()
     print(df.to_json(orient="table", date_format="iso"))
     # stock_financial_report_sina_df = custom_stock_financial_report_sina(
     #     stock="sh600600", symbol="现金流量表"
