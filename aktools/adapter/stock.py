@@ -13,6 +13,43 @@ from akshare.stock_fundamental.stock_finance import (
 )
 
 """
+交易日历
+"""
+from akshare.tool.trade_date_hist import tool_trade_date_hist_sina
+
+
+"""
+新浪-指数实时行情和历史行情
+"""
+from akshare.index.index_stock_zh import (
+    stock_zh_index_daily,
+    stock_zh_index_spot,
+    stock_zh_index_daily_tx,
+    stock_zh_index_daily_em,
+)
+
+"""
+stock-summary
+"""
+from akshare.stock.stock_summary import (
+    stock_sse_summary,
+    stock_szse_summary,
+    stock_sse_deal_daily,
+    stock_szse_area_summary,
+    stock_szse_sector_summary,
+)
+
+"""
+港股股票指数数据-新浪-东财
+"""
+from akshare.index.index_stock_hk import (
+    stock_hk_index_spot_sina,
+    stock_hk_index_daily_em,
+    stock_hk_index_spot_em,
+    stock_hk_index_daily_sina,
+)
+
+"""
 全球宏观-美国宏观
 """
 from akshare.economic.macro_usa import (
@@ -509,8 +546,75 @@ def is_a_stock(stock_code):
         return False
 
 
+# 假设这些函数已经被转换为异步函数
+async def stock_zh_index_spot_async():
+    return await asyncio.to_thread(stock_zh_index_spot)
+
+
+async def stock_hk_index_spot_sina_async():
+    return await asyncio.to_thread(stock_hk_index_spot_sina)
+
+
+async def stock_sse_summary_async():
+    return await asyncio.to_thread(stock_sse_summary)
+
+
+async def stock_szse_summary_async(date: str):
+    return await asyncio.to_thread(stock_szse_summary, date=date)
+
+
+async def market_info():
+    # 获取当前日期
+    current_date = datetime.now()
+    trade_date_df = tool_trade_date_hist_sina()
+    # 将日期列的字符串转换为Datetime对象
+    trade_date_df["trade_date"] = pd.to_datetime(trade_date_df["trade_date"])
+    # 获取今天的日期
+    today_date = datetime.today()
+    # 筛选出小于等于今天的日期
+    filtered_data = trade_date_df[trade_date_df["trade_date"] <= today_date]
+    # 如果有符合条件的日期，则取第一个，否则返回None
+    if not filtered_data.empty:
+        first_date = filtered_data.tail(1)["trade_date"].iloc[0]
+        formatted_date = first_date.strftime("%Y%m%d")
+    else:
+        formatted_date = current_date.strftime("%Y%m%d")
+    tasks = [
+        stock_zh_index_spot_async(),
+        stock_hk_index_spot_sina_async(),
+        stock_sse_summary_async(),
+        stock_szse_summary_async(formatted_date)
+    ]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    return results
+
+
+def custom_market_info() -> pd.DataFrame:
+    results = asyncio.run(market_info())
+    a_share_df, hk_df, sse_df, szse_df = [handle_exception(item) for item in results]
+    a_share_index_df = a_share_df[a_share_df["代码"].isin(["sh000001", "sz399001", "sz399006", "sh000688", "sh000300"])]
+    hk_index_df = hk_df[hk_df["代码"].isin(["HSI", "HSTECH"])]
+
+    # 定义要转换的列名
+    columns_to_convert = ["成交金额", "总市值", "流通市值"]
+    columns_to_convert2 = ["成交额"]
+    # 使用apply方法将值除以1亿来转换为亿元
+    szse_df[columns_to_convert] = szse_df[columns_to_convert].apply(lambda x: x / 100000000)
+    a_share_index_df[columns_to_convert2] = a_share_index_df[columns_to_convert2].apply(lambda x: x / 100000000)
+
+    records_json = {"A股指数": a_share_index_df,
+                    "港股指数": hk_index_df,
+                    "上海交易所总览": sse_df,
+                    "深圳交易所总览": szse_df}
+    result_df = pd.Series(records_json).to_frame().T
+    result_df.columns = records_json.keys()
+    return result_df
+
+
 if __name__ == "__main__":
     os.environ['NO_PROXY'] = "quotes.sina.cn"
+    df = custom_market_info()
+
     # indicator_temp_df = stock_share_hold_change_szse(symbol='000001')
     # current_date = datetime.now()
     # two_year_ago = current_date - timedelta(days=1230)
@@ -519,7 +623,7 @@ if __name__ == "__main__":
     # df = custom_stock_overview(
     #     symbol="600489"
     # )
-    df = custom_macro_china_cpi_monthly()
+    #df = custom_macro_china_cpi_monthly()
     print(df.to_json(orient="table", date_format="iso"))
     # stock_financial_report_sina_df = custom_stock_financial_report_sina(
     #     stock="sh600600", symbol="现金流量表"
