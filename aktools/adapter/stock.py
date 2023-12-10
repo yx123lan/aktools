@@ -595,11 +595,13 @@ def custom_market_info() -> pd.DataFrame:
     hk_index_df = hk_df[hk_df["代码"].isin(["HSI", "HSTECH"])]
 
     # 定义要转换的列名
-    columns_to_convert = ["成交金额", "总市值", "流通市值"]
-    columns_to_convert2 = ["成交额"]
+    columns_to_convert_szse = ["成交金额", "总市值", "流通市值"]
+    columns_to_convert_a_share_index = ["成交额"]
     # 使用apply方法将值除以1亿来转换为亿元
-    szse_df[columns_to_convert] = szse_df[columns_to_convert].apply(lambda x: x / 100000000)
-    a_share_index_df[columns_to_convert2] = a_share_index_df[columns_to_convert2].apply(lambda x: x / 100000000)
+    if not szse_df.empty:
+        szse_df[columns_to_convert_szse] = szse_df[columns_to_convert_szse].apply(lambda x: x / 100000000)
+    if not a_share_index_df.empty:
+        a_share_index_df[columns_to_convert_a_share_index] = a_share_index_df[columns_to_convert_a_share_index].apply(lambda x: x / 100000000)
 
     records_json = {"A股指数": a_share_index_df,
                     "港股指数": hk_index_df,
