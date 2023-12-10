@@ -10,5 +10,6 @@ from aktools.adapter.stock import (
     custom_macro_usa_cpi_monthly,
     custom_market_info,
     custom_stock_rank_lxsz_ths,
-    custom_stock_rank_lxxd_ths
+    custom_stock_rank_lxxd_ths,
+    custom_stock_a_below_net_asset_statistics
 )

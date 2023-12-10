@@ -29,6 +29,9 @@ from akshare.stock_feature.stock_technology_ths import (
     stock_rank_xzjp_ths,
 )
 
+from akshare.stock_feature.stock_a_below_net_asset_statistics import (
+    stock_a_below_net_asset_statistics,
+)
 
 """
 交易日历
@@ -614,6 +617,23 @@ def custom_stock_rank_lxsz_ths() -> pd.DataFrame:
 def custom_stock_rank_lxxd_ths() -> pd.DataFrame:
     temp_df = stock_rank_lxxd_ths()
     return temp_df.head(30)
+
+
+def custom_stock_a_below_net_asset_statistics(start_date: str = None, end_date: str = None) -> pd.DataFrame:
+    # 获取当前日期
+    current_date = datetime.today().date()
+    # 如果未提供start_date，默认为当前日期减去3个月
+    if start_date is None:
+        three_months_ago = current_date - timedelta(days=90)
+        start_date = three_months_ago.strftime('%Y%m%d')
+    # 如果未提供end_date，默认为当前日期
+    if end_date is None:
+        end_date = current_date.strftime('%Y%m%d')
+    temp_df = stock_a_below_net_asset_statistics()
+    # 将输入的日期字符串转换为日期对象
+    start_date = datetime.strptime(start_date, '%Y%m%d').date()
+    end_date = datetime.strptime(end_date, '%Y%m%d').date()
+    return temp_df[(temp_df['date'] > start_date) & (temp_df['date'] < end_date)]
 
 
 def custom_market_info() -> pd.DataFrame:
