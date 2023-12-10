@@ -13,6 +13,24 @@ from akshare.stock_fundamental.stock_finance import (
 )
 
 """
+同花顺-数据中心-技术选股
+"""
+from akshare.stock_feature.stock_technology_ths import (
+    stock_rank_cxg_ths,
+    stock_rank_cxd_ths,
+    stock_rank_lxsz_ths,
+    stock_rank_lxxd_ths,
+    stock_rank_cxfl_ths,
+    stock_rank_cxsl_ths,
+    stock_rank_xstp_ths,
+    stock_rank_xxtp_ths,
+    stock_rank_ljqd_ths,
+    stock_rank_ljqs_ths,
+    stock_rank_xzjp_ths,
+)
+
+
+"""
 交易日历
 """
 from akshare.tool.trade_date_hist import tool_trade_date_hist_sina
@@ -586,6 +604,16 @@ async def market_info():
     ]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     return results
+
+
+def custom_stock_rank_lxsz_ths() -> pd.DataFrame:
+    temp_df = stock_rank_lxsz_ths()
+    return temp_df.head(30)
+
+
+def custom_stock_rank_lxxd_ths() -> pd.DataFrame:
+    temp_df = stock_rank_lxxd_ths()
+    return temp_df.head(30)
 
 
 def custom_market_info() -> pd.DataFrame:
