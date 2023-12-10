@@ -175,7 +175,6 @@ from akshare.economic.macro_china import (
     macro_china_central_bank_balance,
     macro_china_insurance,
     macro_china_supply_of_money,
-    macro_china_swap_rate,
     macro_china_foreign_exchange_gold,
     macro_china_retail_price_index,
     macro_china_real_estate,

@@ -1,4 +1,4 @@
-akshare>=1.7.23
+akshare~=1.11.91
 fastapi>=0.85.0
 uvicorn>=0.16.0
 python-multipart>=0.0.5
