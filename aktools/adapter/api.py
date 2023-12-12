@@ -22,7 +22,7 @@ def search_company(key_word: str, page_size: int, page_num: int, mkt_value: str,
         params["pbRation"] = pb_ration
     r = requests.get(url, params=params)
     if r.status_code == 200:
-        data = remove_fields(r.json(), ['coreTheme', 'companyProfileOriginal', 'mainBusinessOriginal', 'companyScope'])
+        data = remove_fields(r.json(), ['coreTheme', 'companyProfileOriginal', 'mainBusinessOriginal', 'companyScope', 'bk'])
         data['pageSize'] = page_size
         data['pageNum'] = page_num
         data['pageTotal'] = calculate_total_pages(data['hitsTotal'], page_size)
