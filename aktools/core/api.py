@@ -167,6 +167,62 @@ def root(request: Request, item_id: str):
         return JSONResponse(status_code=status.HTTP_200_OK, content=json.loads(temp_df))
 
 
+@app_core.get("/custom/search", description="自定义接口", summary="该接口主要提供公开访问来获取数据")
+def root(request: Request):
+    """
+    接收请求参数及接口名称并返回 JSON 数据
+    此处由于 AKShare 的请求中是同步模式，所以这边在定义 root 函数中没有使用 asyncio 来定义，这样可以开启多线程访问
+    :param request: 请求信息
+    :type request: Request
+    :param item_id: 必选参数; 测试接口名 stock_dxsyl_em 来获取 打新收益率 数据
+    :type item_id: str
+    :return: 指定 接口名称 和 参数 的数据
+    :rtype: json
+    """
+    decode_params = urllib.parse.unquote(str(request.query_params))
+    # print(decode_params)
+    if not bool(request.query_params):
+        try:
+            if item_id.startswith("custom_"):
+                received_df = eval("ak2." + item_id + f"()")
+            else:
+                received_df = eval("ak." + item_id + f"()")
+            if received_df is None:
+                return JSONResponse(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    content={"error": "该接口返回数据为空，请确认参数是否正确：https://www.akshare.xyz"},
+                )
+            temp_df = received_df.to_json(orient="records", date_format="iso")
+        except KeyError as e:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={
+                    "error": f"请输入正确的参数错误 {e}，请升级 AKShare 到最新版本并在文档中确认该接口的使用方式：https://www.akshare.xyz"
+                },
+            )
+        return JSONResponse(status_code=status.HTTP_200_OK, content=json.loads(temp_df))
+    else:
+        try:
+            if item_id.startswith("custom_"):
+                received_df = eval("ak2." + item_id + f"({eval_str})")
+            else:
+                received_df = eval("ak." + item_id + f"({eval_str})")
+            if received_df is None:
+                return JSONResponse(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    content={"error": "该接口返回数据为空，请确认参数是否正确：https://www.akshare.xyz"},
+                )
+            temp_df = received_df.to_json(orient="records", date_format="iso")
+        except KeyError as e:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={
+                    "error": f"请输入正确的参数错误 {e}，请升级 AKShare 到最新版本并在文档中确认该接口的使用方式：https://www.akshare.xyz"
+                },
+            )
+        return JSONResponse(status_code=status.HTTP_200_OK, content=json.loads(temp_df))
+
+
 def generate_html_response():
     file_path = get_pyscript_html(file="akscript.html")
     with open(file_path, encoding="utf8") as f:
