@@ -18,6 +18,7 @@ from fastapi.templating import Jinja2Templates
 
 from aktools.datasets import get_pyscript_html, get_template_path
 from aktools.login.user_login import User, get_current_active_user
+from aktools.adapter.api import search
 
 app_core = APIRouter()
 
@@ -168,7 +169,7 @@ def root(request: Request, item_id: str):
 
 
 @app_core.get("/custom/search", description="自定义接口", summary="该接口主要提供公开访问来获取数据")
-def root(request: Request):
+def custom_search(request: Request):
     """
     接收请求参数及接口名称并返回 JSON 数据
     此处由于 AKShare 的请求中是同步模式，所以这边在定义 root 函数中没有使用 asyncio 来定义，这样可以开启多线程访问
@@ -179,48 +180,37 @@ def root(request: Request):
     :return: 指定 接口名称 和 参数 的数据
     :rtype: json
     """
-    decode_params = urllib.parse.unquote(str(request.query_params))
     # print(decode_params)
-    if not bool(request.query_params):
-        try:
-            if item_id.startswith("custom_"):
-                received_df = eval("ak2." + item_id + f"()")
-            else:
-                received_df = eval("ak." + item_id + f"()")
-            if received_df is None:
-                return JSONResponse(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    content={"error": "该接口返回数据为空，请确认参数是否正确：https://www.akshare.xyz"},
-                )
-            temp_df = received_df.to_json(orient="records", date_format="iso")
-        except KeyError as e:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={
-                    "error": f"请输入正确的参数错误 {e}，请升级 AKShare 到最新版本并在文档中确认该接口的使用方式：https://www.akshare.xyz"
-                },
-            )
-        return JSONResponse(status_code=status.HTTP_200_OK, content=json.loads(temp_df))
+    if bool(request.query_params):
+        page = search(request.query_params.get("keyWord"),
+                      get_query_param_as_int(request, "pageSize", 20),
+                      get_query_param_as_int(request, "pageNum", 1),
+                      request.query_params.get("mktValue"),
+                      request.query_params.get("peRation"),
+                      request.query_params.get("pbRation"))
+        return JSONResponse(status_code=status.HTTP_200_OK, content=page)
     else:
-        try:
-            if item_id.startswith("custom_"):
-                received_df = eval("ak2." + item_id + f"({eval_str})")
-            else:
-                received_df = eval("ak." + item_id + f"({eval_str})")
-            if received_df is None:
-                return JSONResponse(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    content={"error": "该接口返回数据为空，请确认参数是否正确：https://www.akshare.xyz"},
-                )
-            temp_df = received_df.to_json(orient="records", date_format="iso")
-        except KeyError as e:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={
-                    "error": f"请输入正确的参数错误 {e}，请升级 AKShare 到最新版本并在文档中确认该接口的使用方式：https://www.akshare.xyz"
-                },
-            )
-        return JSONResponse(status_code=status.HTTP_200_OK, content=json.loads(temp_df))
+        return JSONResponse(status_code=status.HTTP_200_OK, content={})
+
+
+def get_query_param_as_int(request: Request, param_name: str, default_value=0) -> int:
+    """
+    Extracts a query parameter from the request as an integer.
+    """
+    try:
+        return int(request.query_params.get(param_name, default_value))
+    except ValueError:
+        return default_value
+
+
+def get_query_param_as_float(request: Request, param_name: str, default_value=0.0) -> float:
+    """
+    Extracts a query parameter from the request as a float.
+    """
+    try:
+        return float(request.query_params.get(param_name, default_value))
+    except ValueError:
+        return default_value
 
 
 def generate_html_response():
