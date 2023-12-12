@@ -18,7 +18,7 @@ from fastapi.templating import Jinja2Templates
 
 from aktools.datasets import get_pyscript_html, get_template_path
 from aktools.login.user_login import User, get_current_active_user
-from aktools.adapter.api import search
+from aktools.adapter.api import search_company
 
 app_core = APIRouter()
 
@@ -168,8 +168,8 @@ def root(request: Request, item_id: str):
         return JSONResponse(status_code=status.HTTP_200_OK, content=json.loads(temp_df))
 
 
-@app_core.get("/custom/search", description="自定义接口", summary="该接口主要提供公开访问来获取数据")
-def custom_search(request: Request):
+@app_core.get("/custom/search/company", description="自定义接口", summary="公司筛选")
+def custom_search_company(request: Request):
     """
     接收请求参数及接口名称并返回 JSON 数据
     此处由于 AKShare 的请求中是同步模式，所以这边在定义 root 函数中没有使用 asyncio 来定义，这样可以开启多线程访问
@@ -182,12 +182,13 @@ def custom_search(request: Request):
     """
     # print(decode_params)
     if bool(request.query_params):
-        page = search(request.query_params.get("keyWord"),
+        page = search_company(request.query_params.get("keyWord"),
                       get_query_param_as_int(request, "pageSize", 20),
                       get_query_param_as_int(request, "pageNum", 1),
                       request.query_params.get("mktValue"),
                       request.query_params.get("peRation"),
-                      request.query_params.get("pbRation"))
+                      request.query_params.get("pbRation"),
+                      request.query_params.get("mainPoint"))
         return JSONResponse(status_code=status.HTTP_200_OK, content=page)
     else:
         return JSONResponse(status_code=status.HTTP_200_OK, content={})
