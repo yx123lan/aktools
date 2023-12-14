@@ -1,13 +1,20 @@
 import requests
 import os
+import pandas as pd
 import json
 import pywencai
 
 
-def search_iwencai(key_word: str, page_size: int, page_num: int, query_type: str) -> list:
+def search_iwencai(key_word: str, page_size: int, page_num: int, query_type: str):
     res = pywencai.get(query=key_word, page=page_num, perpage=page_size, query_type=query_type)
     if res is None:
         return []
+    elif type(res) is dict:
+        # 将 DataFrame 转换为 JSON 字符串
+        for key, value in res.items():
+            if isinstance(value, pd.DataFrame):
+                res[key] = value.to_json(orient='records', force_ascii=False)
+        return res
     else:
         return json.loads(res.to_json(orient="records", date_format="iso"))
 

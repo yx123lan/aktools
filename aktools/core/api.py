@@ -219,7 +219,7 @@ def custom_search_wencai(request: Request):
     # print(decode_params)
     if bool(request.query_params):
         page = search_iwencai(request.query_params.get("keyWord"),
-                      get_query_param_as_int(request, "pageSize", 20),
+                      get_query_param_as_int(request, "pageSize", 10),
                       get_query_param_as_int(request, "pageNum", 1),
                       request.query_params.get("queryType", "stock"))
         return JSONResponse(status_code=status.HTTP_200_OK, content=page)
