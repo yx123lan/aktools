@@ -8,8 +8,8 @@ COPY  ./ /usr/local/aktools
 WORKDIR /usr/local/aktools
 
 # 安装nodejs
-curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
-apt-get install -y nodejs
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+RUN apt-get install -y nodejs
 
 RUN pip install -r requirements.txt
 # 新增 gunicorn 安装，提升并发和并行能力
