@@ -1,5 +1,15 @@
 import requests
 import os
+import json
+import pywencai
+
+
+def search_iwencai(key_word: str, page_size: int, page_num: int, query_type: str) -> list:
+    res = pywencai.get(query=key_word, page=page_num, perpage=page_size, query_type=query_type)
+    if res is None:
+        return []
+    else:
+        return json.loads(res.to_json(orient="records", date_format="iso"))
 
 
 def search_company(key_word: str, page_size: int, page_num: int, mkt_value: str, pe_ration: str,
@@ -55,3 +65,5 @@ def remove_fields(data, field_names):
                 if field_name in company:
                     del company[field_name]
     return data
+
+

@@ -7,6 +7,10 @@ RUN pip install --upgrade pip
 COPY  ./ /usr/local/aktools
 WORKDIR /usr/local/aktools
 
+# 安装nodejs
+curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+apt-get install -y nodejs
+
 RUN pip install -r requirements.txt
 # 新增 gunicorn 安装，提升并发和并行能力
 RUN pip install --no-cache-dir gunicorn -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com  --upgrade

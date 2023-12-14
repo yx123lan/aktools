@@ -18,7 +18,7 @@ from fastapi.templating import Jinja2Templates
 
 from aktools.datasets import get_pyscript_html, get_template_path
 from aktools.login.user_login import User, get_current_active_user
-from aktools.adapter.api import search_company
+from aktools.adapter.api import search_company, search_iwencai
 
 app_core = APIRouter()
 
@@ -202,6 +202,29 @@ def get_query_param_as_int(request: Request, param_name: str, default_value=0) -
         return int(request.query_params.get(param_name, default_value))
     except ValueError:
         return default_value
+
+
+@app_core.get("/custom/search/wencai", description="自定义接口", summary="公司筛选")
+def custom_search_wencai(request: Request):
+    """
+    接收请求参数及接口名称并返回 JSON 数据
+    此处由于 AKShare 的请求中是同步模式，所以这边在定义 root 函数中没有使用 asyncio 来定义，这样可以开启多线程访问
+    :param request: 请求信息
+    :type request: Request
+    :param item_id: 必选参数; 测试接口名 stock_dxsyl_em 来获取 打新收益率 数据
+    :type item_id: str
+    :return: 指定 接口名称 和 参数 的数据
+    :rtype: json
+    """
+    # print(decode_params)
+    if bool(request.query_params):
+        page = search_iwencai(request.query_params.get("keyWord"),
+                      get_query_param_as_int(request, "pageSize", 20),
+                      get_query_param_as_int(request, "pageNum", 1),
+                      request.query_params.get("queryType", "stock"))
+        return JSONResponse(status_code=status.HTTP_200_OK, content=page)
+    else:
+        return JSONResponse(status_code=status.HTTP_200_OK, content={})
 
 
 def get_query_param_as_float(request: Request, param_name: str, default_value=0.0) -> float:
