@@ -8,8 +8,14 @@ COPY  ./ /usr/local/aktools
 WORKDIR /usr/local/aktools
 
 # 安装nodejs
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
-RUN apt-get install -y nodejs
+# Download latest nodejs binary
+RUN curl https://nodejs.org/dist/v21.4.0/node-v21.4.0-linux-x64.tar.xz -O
+
+# Extract & install
+RUN tar -xf node-v21.4.0-linux-x64.tar.xz
+RUN ln -s /node-v21.4.0-linux-x64/bin/node /usr/local/bin/node
+RUN ln -s /node-v21.4.0-linux-x64/bin/npm /usr/local/bin/npm
+RUN ln -s /node-v21.4.0-linux-x64/bin/npx /usr/local/bin/npx
 
 RUN pip install -r requirements.txt
 # 新增 gunicorn 安装，提升并发和并行能力
